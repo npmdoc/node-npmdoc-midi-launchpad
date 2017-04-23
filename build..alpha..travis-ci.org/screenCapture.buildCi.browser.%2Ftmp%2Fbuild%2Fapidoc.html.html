@@ -1,0 +1,430 @@
+<html><head></head><body><div class="apidocDiv">
+<style>
+/*csslint
+*/
+.apidocDiv {
+    background: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.apidocDiv a[href] {
+    color: #33f;
+    font-weight: bold;
+    text-decoration: none;
+}
+.apidocDiv a[href]:hover {
+    text-decoration: underline;
+}
+.apidocCodeCommentSpan {
+    background: #bbf;
+    color: #000;
+    display: block;
+}
+.apidocCodeKeywordSpan {
+    color: #d00;
+    font-weight: bold;
+}
+.apidocCodePre {
+    background: #eef;
+    border: 1px solid;
+    color: #777;
+    padding: 5px;
+    white-space: pre-wrap;
+}
+.apidocFooterDiv {
+    margin-top: 20px;
+    text-align: center;
+}
+.apidocModuleLi {
+    margin-top: 10px;
+}
+.apidocSectionDiv {
+    border-top: 1px solid;
+    margin-top: 20px;
+}
+.apidocSignatureSpan {
+    color: #777;
+    font-weight: bold;
+}
+</style>
+<h1>api documentation for
+    <a href="http://sydlawrence.github.io/node-midi-launchpad/">midi-launchpad (v1.0.3)</a>
+</h1>
+<h4>A simple node module for use with the Novation Launchpad</h4>
+<div class="apidocSectionDiv"><a href="#apidoc.tableOfContents" id="apidoc.tableOfContents"><h1>table of contents</h1></a><ol>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.midi-launchpad">module midi-launchpad</a><ol>
+
+        <li>
+
+            <span class="apidocSignatureSpan">object <span class="apidocSignatureSpan">midi-launchpad.</span>button</span>
+
+        </li>
+
+        <li>
+
+            <span class="apidocSignatureSpan">object <span class="apidocSignatureSpan">midi-launchpad.</span>lawrencesans</span>
+
+        </li>
+
+    </ol></li>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.midi-launchpad.button">module midi-launchpad.button</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.midi-launchpad.button.Button">
+            function <span class="apidocSignatureSpan">midi-launchpad.button.</span>Button
+            <span class="apidocSignatureSpan">(launchpad, note, y)</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.midi-launchpad.lawrencesans">module midi-launchpad.lawrencesans</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.midi-launchpad.lawrencesans.LawrenceSans">
+            function <span class="apidocSignatureSpan">midi-launchpad.lawrencesans.</span>LawrenceSans
+            <span class="apidocSignatureSpan">(character)</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+</ol></div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.midi-launchpad" id="apidoc.module.midi-launchpad">module midi-launchpad</a></h1>
+
+
+
+
+
+</div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.midi-launchpad.button" id="apidoc.module.midi-launchpad.button">module midi-launchpad.button</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.midi-launchpad.button.Button" id="apidoc.element.midi-launchpad.button.Button">
+        function <span class="apidocSignatureSpan">midi-launchpad.button.</span>Button
+        <span class="apidocSignatureSpan">(launchpad, note, y)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">Button = function (launchpad, note, y) {
+    this.launchpad = launchpad;
+
+
+    _.extend(this, Backbone.Events);
+
+    this._grid = launchpad;
+    this._state = launchpad.LED_OFF;
+    var that = this;
+
+    this._uuid = [];
+
+    this.special = false;
+
+    // Are we being assigned via a note or x, y?
+    if(y === undefined) {
+        var map = mapButtonToLaunchpad(note);
+        this.x = map[0];
+        this.y = map[1];
+    } else {
+        this.x = note;
+        this.y = y;
+    }
+
+    if (launchpad.specials[this.y][this.x] !== undefined) {
+        this.special = launchpad.specials[this.y][this.x];
+    }
+
+    this.light = function(color) {
+        this.stopBlink();
+        if(color === undefined)
+            color = launchpad.colors.red.high;
+        if (this._state === color) return;
+
+        // Send the instruction to the launchpad
+        if(this.y === 8)
+            launchpad.output.sendMessage([176, this.toNote(), color]);
+        else
+            launchpad.output.sendMessage([144, this.toNote(), color]);
+
+        // Save the state
+        this._state = color;
+        this.trigger("state_change");
+
+    };
+
+    this.setState = function(state) {
+        if (this._state === state) return;
+        // Send the instruction to the launchpad
+        if(this.y === 8)
+            launchpad.output.sendMessage([176, this.toNote(), state]);
+        else
+            launchpad.output.sendMessage([144, this.toNote(), state]);
+
+        // Save the state
+        this._state = state;
+        this.trigger("state_change");
+    };
+
+    this.dark = function() {
+        if (this._state === Launchpad.colors.off) return;
+
+        if(this.y === 8)
+            launchpad.output.sendMessage([176, this.toNote(), Launchpad.colors.off]);
+        else
+            launchpad.output.sendMessage([144, this.toNote(), Launchpad.colors.off]);
+
+        this._state = Launchpad.colors.off;
+        this.trigger("state_change");
+    };
+
+    // this.on("press", function() {
+    //     launchpad.trigger("press",that);
+    // });
+
+    // this.on("release", function() {
+    //     launchpad.trigger("release",that);
+    // });
+
+    // this.on("state_change", function() {
+    //     launchpad.trigger("state_change",that);
+    // });
+
+    this.startBlink = function(color) {
+        this._blink_color = color;
+        this._grid._blinking.push(this);
+
+        // If we're adding the first blinking LED, start the interval
+        if(this._grid._blinking.length == 1)
+            this._grid._blink_interval = setInterval(this._grid._tick, 500);
+        this.trigger("state_change");
+    };
+
+    this.stopBlink = function() {
+        if (this._grid._blinking === undefined)
+            this._grid._blinking = [];
+        var index = this._grid._blinking.indexOf(this);
+        if(index === -1)
+            return;
+
+        delete this._blink_color;
+        this._grid._blinking.splice(index, 1);
+        this.trigger("state_change");
+    };
+
+    this.getState = function() {
+        return this._state;
+    };
+
+    // Converts x,y -&gt; MIDI note
+    this.toNote = function() {
+        if(this.y == 8)
+            return 104 + this.x;
+        else
+            return (this.y * 16) + this.x;
+    };
+    this.toString = function() {
+        return "(" + this.x + ", " + this.y + ")";
+    }
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.midi-launchpad.lawrencesans" id="apidoc.module.midi-launchpad.lawrencesans">module midi-launchpad.lawrencesans</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.midi-launchpad.lawrencesans.LawrenceSans" id="apidoc.element.midi-launchpad.lawrencesans.LawrenceSans">
+        function <span class="apidocSignatureSpan">midi-launchpad.lawrencesans.</span>LawrenceSans
+        <span class="apidocSignatureSpan">(character)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">LawrenceSans = function (character) {
+    character = character.toLowerCase();
+    if (character == '1') {
+        return [
+                "00001000",
+                "00011000",
+                "00101000",
+                "00001000",
+                "00001000",
+                "00001000",
+                "00001000",
+                "11111111"];
+    }
+    if (character == '2') {
+        return [
+                "00011110",
+                "00100001",
+                "01000001",
+                "00000110",
+                "00011000",
+                "00100000",
+                "01000000",
+                "11111111"];
+    }
+    if (character == '3') {
+        return [
+                "01111110",
+                "10000001",
+                "00000001",
+                "11111110",
+                "00000001",
+                "00000001",
+                "10000001",
+                "01111110"];
+    }
+    if (character == '4') {
+        return [
+                "00000100",
+                "00001100",
+                "00010100",
+                "00100100",
+                "01000100",
+                "11111111",
+                "00000100",
+                "00000100"];
+    }
+    if (character == '5') {
+        return [
+                "11111111",
+                "10000000",
+                "10000000",
+                "11111100",
+                "00000010",
+                "00000001",
+                "00000010",
+                "11111100"];
+    }
+    if (character == '6') {
+        return [
+                "00000010",
+                "00001100",
+                "00110000",
+                "01000000",
+                "11111110",
+                "10000001",
+                "10000001",
+                "01111110"];
+    }
+    if (character == '7') {
+        return [
+                "11111111",
+                "00000010",
+                "00000100",
+                "00001000",
+                "00010000",
+                "00100000",
+                "01000000",
+                "10000000"];
+    }
+    if (character == '8') {
+        return [
+                "01111110",
+                "10000001",
+                "10000001",
+                "01111110",
+                "10000001",
+                "10000001",
+                "10000001",
+                "01111110"];
+    }
+    if (character == '9') {
+        return [
+                "01111110",
+                "10000001",
+                "10000001",
+                "01111111",
+                "00000001",
+                "00000010",
+                "00000100",
+                "00011000"];
+    }
+    if (character == '0') {
+        return [
+                "01111110",
+                "10000001",
+                "10000001",
+                "10011001",
+                "10011001",
+                "10000001",
+                "10000001",
+                "01111110"];
+    }
+    if (character == 'a') {
+        return [
+                "01111110",
+                "10000001",
+                "10000001",
+                "10000001",
+                "11111111",
+                "10000001",
+                "10000001",
+                "10000001"];
+    }
+    if (character == 'b') {
+        return [
+                "11111110",
+                "10000001",
+                "10000001",
+                "11111111",
+                "10000001",
+                "10000001",
+                "10000001",
+                "11111111"];
+    }
+    if (character == 'c') {
+        return [
+                "01111111",
+                "10000000",
+                "10000000",
+                "10000000",
+                "10000000",
+                "10000000",
+                "10000000",
+                "01111111"];
+    }
+    if (character == 'd') {
+        return [
+                "11111100",
+                "10000010",
+                "10000001",
+                "10000001",
+                "10000001",
+                "10000001",
+                "10000010",
+                "11111100"];
+    }
+    if (character == 'e') {
+        return [
+                "11111111",
+                "10000000",
+                "10000000",
+                "11111111", ...</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocFooterDiv">
+    [ this document was created with
+    <a href="https://github.com/kaizhu256/node-utility2" target="_blank">utility2</a>
+    ]
+</div>
+</div>
+</body></html>
